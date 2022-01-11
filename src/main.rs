@@ -38,7 +38,7 @@ fn main() {
     loop {
         plotter = plotter.merge(&render_scene_parallel(&scene, width, height, rays_per_pixel));
         let rgb_data = plotter.tone_map();
-        ray_count += rays_per_pixel * width * height;
+        ray_count += rays_per_pixel as u128 * width as u128 * height as u128;
 
         let data = rgb_data.
             iter()
