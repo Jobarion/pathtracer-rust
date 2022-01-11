@@ -22,6 +22,7 @@ use crate::geometry::quaternion::Quaternion;
 use crate::geometry::sphere::Sphere;
 use crate::material::black_body_radiator::BlackBodyRadiator;
 use crate::material::diffuse::{DiffuseGrayMaterial, SimpleDiffuseColoredMaterial};
+use crate::material::glass::GlassMaterial;
 use crate::plotter::Plotter;
 use crate::tracer::RenderIterator;
 
@@ -34,7 +35,7 @@ fn main() {
     let mut plotter = Plotter::new(width, height);
 
     let mut ray_count = 0;
-    let rays_per_pixel = 10;
+    let rays_per_pixel = 50;
     loop {
         plotter = plotter.merge(&render_scene_parallel(&scene, width, height, rays_per_pixel));
         let rgb_data = plotter.tone_map();
@@ -107,15 +108,16 @@ fn create_scene_box() -> Scene {
     let right = Entity::DARK(Box::new(Plane::new(Vec3::new(-10.0, 0.0, 0.0), Vec3::new(1.0, 0.0, 0.0))), Box::new(SimpleDiffuseColoredMaterial::new(1.0, 600.0, 40.0)));
 
     let sun1 = Entity::LUMINOUS(Box::new(Sphere::new(Vec3::new(0.0, 0.0, 9.0), 1.0)), Box::new(BlackBodyRadiator::new(6800.0, 8.0)));
-    let sun2 = Entity::LUMINOUS(Box::new(Sphere::new(Vec3::new(7.0, 5.0, 5.0), 2.0)), Box::new(BlackBodyRadiator::new(3000.0, 15.0)));
+    let sun2 = Entity::LUMINOUS(Box::new(Sphere::new(Vec3::new(7.0, 5.0, 5.0), 2.0)), Box::new(BlackBodyRadiator::new(4000.0, 150.0)));
     let sun3 = Entity::LUMINOUS(Box::new(Sphere::new(Vec3::new(-4.0, 5.0, -3.0), 3.0)), Box::new(BlackBodyRadiator::new(9000.0, 6.0)));
 
-    let mirror_sphere1 = Entity::DARK(Box::new(Sphere::new(Vec3::new(3.0, 2.0, 7.0), 1.8)), Box::new(GlossyMaterial::new(1.0, Box::new(DiffuseGrayMaterial::new(1.0)))));
-    let mirror_sphere2 = Entity::DARK(Box::new(Sphere::new(Vec3::new(0.0, 4.0, 8.0), 2.0)), Box::new(GlossyMaterial::new(1.0, Box::new(DiffuseGrayMaterial::new(1.0)))));
-    let glossy_sphere = Entity::DARK(Box::new(Sphere::new(Vec3::new(5.0, 3.0, -5.0), 3.0)), Box::new(GlossyMaterial::new(0.8, Box::new(DiffuseGrayMaterial::new(1.0)))));
-    let colored_sphere = Entity::DARK(Box::new(Sphere::new(Vec3::new(2.0, 0.0, -5.0), 2.5)), Box::new(SimpleDiffuseColoredMaterial::new(1.0, 500.0, 30.0)));
+    let colored_sphere1 = Entity::DARK(Box::new(Sphere::new(Vec3::new(7.0, 5.0, 5.0), 2.0)), Box::new(SimpleDiffuseColoredMaterial::new(1.0, 430.0, 10.0)));
+    let mirror_sphere1 = Entity::DARK(Box::new(Sphere::new(Vec3::new(3.0, 2.0, 7.0), 1.8)), Box::new(GlossyMaterial::new(0.05, Box::new(DiffuseGrayMaterial::new(1.0)))));
+    let mirror_sphere2 = Entity::DARK(Box::new(Sphere::new(Vec3::new(0.0, 4.0, 8.0), 2.0)), Box::new(GlossyMaterial::new(0.05, Box::new(DiffuseGrayMaterial::new(1.0)))));
+    let glass_sphere_1 = Entity::DARK(Box::new(Sphere::new(Vec3::new(0.6, -4.0, 4.5), 0.9)), Box::new(GlassMaterial));
 
-    let entities = vec![top, bottom, front, back, left, right, sun1, sun2, sun3, mirror_sphere1, mirror_sphere2];
+
+    let entities = vec![top, bottom, front, back, left, right, sun1, sun3, mirror_sphere1, mirror_sphere2, glass_sphere_1, colored_sphere1];
     let camera = Camera::new(
         Vec3::new(0.0, -9.0, 0.0),
         Quaternion::new(0.0, 10.0, 3.0, 0.0),
