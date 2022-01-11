@@ -9,6 +9,7 @@ mod plotter;
 use std::path::Path;
 use std::fs::File;
 use std::io::BufWriter;
+use std::time::Instant;
 use rand::Rng;
 use rayon::iter::ParallelIterator;
 use rayon::prelude::IntoParallelIterator;
@@ -36,8 +37,9 @@ fn main() {
 
     let mut ray_count = 0;
     let rays_per_pixel = 50;
+    let start = Instant::now();
     loop {
-        plotter = plotter.merge(&render_scene_parallel(&scene, width, height, rays_per_pixel));
+        plotter.merge(render_scene_parallel(&scene, width, height, rays_per_pixel));
         let rgb_data = plotter.tone_map();
         ray_count += rays_per_pixel as u128 * width as u128 * height as u128;
 
@@ -50,10 +52,11 @@ fn main() {
                 array
             });
 
-        println!("Rendered {} rays", ray_count);
+        println!("Rendered {} rays in {} seconds ({}/s)", ray_count, start.elapsed().as_secs(), ray_count / start.elapsed().as_secs() as u128);
 
-        let file_name = format!("rendered_{}.png", ray_count);
-        let path = Path::new(file_name.as_str());
+        // let file_name = format!("rendered_{}.png", ray_count);
+        let file_name = "rendered.png";
+        let path = Path::new(file_name);
         let file = File::create(path).unwrap();
         let ref mut w = BufWriter::new(file);
         let mut encoder = png::Encoder::new(w, width as u32, height as u32); // Width is 2 pixels and height is 1.
@@ -77,11 +80,14 @@ fn render_scene_parallel(scene: &Scene, width: u16, height: u16, rays_per_pixel:
         .map(|riter| riter
             .take(rays_per_slice as usize)
             .fold(Plotter::new(width, height), |mut acc, val| {
-                acc.plot_photon(&val);
+                acc.plot_photon(val);
                 return acc;
             })
         )
-        .reduce(|| Plotter::new(width, height), |acc, val| acc.merge(&val))
+        .reduce(|| Plotter::new(width, height), |mut acc, val| {
+            acc.merge(val);
+            return acc;
+        })
 }
 
 fn create_scene_simple() -> Scene {

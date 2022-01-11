@@ -1,3 +1,4 @@
+use rayon::iter::plumbing::bridge_unindexed;
 use crate::geometry::vec3::Vec3;
 use crate::tracer::Photon;
 
@@ -23,11 +24,16 @@ impl Plotter {
         Plotter {width, height, aspect_ratio: (width as f64 / height as f64), buffer: vec![Vec3::new(0.0, 0.0, 0.0); (width as i32 * height as i32) as usize].into_boxed_slice()}
     }
 
-    pub fn merge(&self, other: &Plotter) -> Plotter {
-        Plotter::new_merged(self, other)
+    pub fn merge(&mut self, other: Plotter) {
+        self.buffer = self.buffer
+            .iter()
+            .zip(other.buffer.iter())
+            .map(|(a, b)| a.add(b))
+            .collect::<Vec<Vec3>>()
+            .into_boxed_slice();
     }
 
-    pub fn plot_photon(&mut self, photon: &Photon) {
+    pub fn plot_photon(&mut self, photon: Photon) {
         // println!("x: {} y: {} wavelength: {} intensity: {}", photon.x, photon.y, photon.wavelength, photon.strength);
         let cie = Plotter::wavelength_to_cie(photon.wavelength);
         self.plot_pixel(photon.x, photon.y, cie.scale(photon.strength));
