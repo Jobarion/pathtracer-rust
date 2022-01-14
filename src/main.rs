@@ -37,13 +37,13 @@ fn main() {
 
     let scene = create_scene_box();
 
-    let width = 512_u16;
-    let height = 512_u16;
+    let width = 2048_u16;
+    let height = 2048_u16;
 
     let mut plotter = Plotter::new(width, height);
 
     let mut ray_count = 0;
-    let rays_per_pixel = 1;
+    let rays_per_pixel = 50;
     let start = Instant::now();
     loop {
         plotter.merge(render_scene_parallel(&scene, width, height, rays_per_pixel));
@@ -133,8 +133,8 @@ fn create_scene_simple() -> Scene {
 fn create_scene_box() -> Scene {
     let top = Entity::DARK(Box::new(Plane::new(Vec3::new(0.0, 0.0, -10.0), Vec3::new(0.0, 0.0, 1.0))), Box::new(GlossyMaterial::new(0.0, Box::new(DiffuseGrayMaterial::new(1.0)))));
     let bottom = Entity::DARK(Box::new(Plane::new(Vec3::new(0.0, 0.0, 10.0), Vec3::new(0.0, 0.0, 1.0))), Box::new(DiffuseGrayMaterial::new(0.8)));
-    // let front = Entity::DARK(Box::new(Plane::new(Vec3::new(0.0, -10.0, 0.0), Vec3::new(0.0, 1.0, 0.0))), Box::new(SimpleDiffuseColoredMaterial::new(1.0, 500.0, 10.0)));
-    let front = Entity::LUMINOUS(Box::new(Plane::new(Vec3::new(0.0, -10.0, 0.0), Vec3::new(0.0, 1.0, 0.0))), Box::new(BlackBodyRadiator::new(3000.0, 1.0)));
+    let front = Entity::DARK(Box::new(Plane::new(Vec3::new(0.0, -10.0, 0.0), Vec3::new(0.0, 1.0, 0.0))), Box::new(SimpleDiffuseColoredMaterial::new(1.0, 500.0, 10.0)));
+    // let front = Entity::LUMINOUS(Box::new(Plane::new(Vec3::new(0.0, -10.0, 0.0), Vec3::new(0.0, 1.0, 0.0))), Box::new(BlackBodyRadiator::new(3000.0, 1.0)));
     let back = Entity::DARK(Box::new(Plane::new(Vec3::new(0.0, 10.0, 0.0), Vec3::new(0.0, 1.0, 0.0))), Box::new(GlossyMaterial::new(0.8, Box::new(DiffuseGrayMaterial::new(1.0)))));
     let left = Entity::DARK(Box::new(Plane::new(Vec3::new(10.0, 0.0, 0.0), Vec3::new(1.0, 0.0, 0.0))), Box::new(SimpleDiffuseColoredMaterial::new(1.0, 400.0, 20.0)));
     let right = Entity::DARK(Box::new(Plane::new(Vec3::new(-10.0, 0.0, 0.0), Vec3::new(1.0, 0.0, 0.0))), Box::new(SimpleDiffuseColoredMaterial::new(1.0, 600.0, 40.0)));
@@ -156,21 +156,20 @@ fn create_scene_box() -> Scene {
     let path = "bun_zipper.ply";
     let mut f = std::fs::File::open(path).unwrap();
     let mut bunny_mesh = mesh::read_ply(f);
-    println!("{:?}", bunny_mesh.aabb().max - bunny_mesh.aabb().min);
     bunny_mesh = bunny_mesh.scale(20.0);
-    println!("{:?}", bunny_mesh.aabb().max - bunny_mesh.aabb().min);
     bunny_mesh = bunny_mesh.rotate(Quat::from_rotation_x(270.0_f32.to_radians()) * Quat::from_rotation_y(180.0_f32.to_radians()));
-    println!("{:?}", bunny_mesh.aabb().max - bunny_mesh.aabb().min);
+    let t = Vec3::new(-3.0, 2.0, 10.0 - bunny_mesh.aabb().max.z);
+    bunny_mesh = bunny_mesh.translate(t);
 
-    // let bunny = Entity::DARK(Box::new(bunny_mesh), Box::new(SimpleDiffuseColoredMaterial::new(0.8, 550.0, 30.0)));
-    let bunny = Entity::DARK(Box::new(bunny_mesh), Box::new(GlossyMaterial::new(0.0, Box::new(DiffuseGrayMaterial::new(1.0)))));
+    let bunny = Entity::DARK(Box::new(bunny_mesh), Box::new(SimpleDiffuseColoredMaterial::new(0.8, 550.0, 30.0)));
+    // let bunny = Entity::DARK(Box::new(bunny_mesh), Box::new(GlossyMaterial::new(0.0, Box::new(DiffuseGrayMaterial::new(1.0)))));
 
     let entities = vec![top, bottom, front, back, left, right, sun1, sun2, sun3, mirror_sphere1, mirror_sphere2, glass_sphere_1, glass_coating, colored_sphere1, glass_sphere_3, bunny];
 
     let camera = Camera::new(
-        Vec3::new(0.0, -9.0, 0.0),
-        Quat::from_vec4(Vec4::new(0.0, 10.0, 2.0, 0.0)).normalize(),
-        std::f32::consts::PI * 0.40,
+        Vec3::new(0.0, -9.0, -4.0),
+        Quat::from_vec4(Vec4::new(0.0, 10.0, 3.0, 0.0)).normalize(),
+        std::f32::consts::PI * 0.35,
         4.0,
         f32::MAX,
         0.01
