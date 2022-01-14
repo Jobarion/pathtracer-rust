@@ -35,10 +35,10 @@ use crate::tracer::RenderIterator;
 
 fn main() {
 
-    let scene = create_scene_box();
+    let scene = create_scene_model();
 
-    let width = 2048_u16;
-    let height = 2048_u16;
+    let width = 512_u16;
+    let height = 512_u16;
 
     let mut plotter = Plotter::new(width, height);
 
@@ -130,12 +130,69 @@ fn create_scene_simple() -> Scene {
     Scene::new(entities, camera)
 }
 
-fn create_scene_box() -> Scene {
+
+fn create_scene_model() -> Scene {
     let top = Entity::DARK(Box::new(Plane::new(Vec3::new(0.0, 0.0, -10.0), Vec3::new(0.0, 0.0, 1.0))), Box::new(GlossyMaterial::new(0.0, Box::new(DiffuseGrayMaterial::new(1.0)))));
     let bottom = Entity::DARK(Box::new(Plane::new(Vec3::new(0.0, 0.0, 10.0), Vec3::new(0.0, 0.0, 1.0))), Box::new(DiffuseGrayMaterial::new(0.8)));
+    // let front = Entity::DARK(Box::new(Plane::new(Vec3::new(0.0, -10.0, 0.0), Vec3::new(0.0, 1.0, 0.0))), Box::new(SimpleDiffuseColoredMaterial::new(1.0, 500.0, 10.0)));
+    let front = Entity::LUMINOUS(Box::new(Plane::new(Vec3::new(0.0, -10.0, 0.0), Vec3::new(0.0, 1.0, 0.0))), Box::new(BlackBodyRadiator::new(7000.0, 1.0)));
+    let back = Entity::DARK(Box::new(Plane::new(Vec3::new(0.0, 10.0, 0.0), Vec3::new(0.0, 1.0, 0.0))), Box::new(GlossyMaterial::new(0.8, Box::new(DiffuseGrayMaterial::new(1.0)))));
+    let left = Entity::DARK(Box::new(Plane::new(Vec3::new(10.0, 0.0, 0.0), Vec3::new(1.0, 0.0, 0.0))), Box::new(SimpleDiffuseColoredMaterial::new(1.0, 400.0, 20.0)));
+    let right = Entity::DARK(Box::new(Plane::new(Vec3::new(-10.0, 0.0, 0.0), Vec3::new(1.0, 0.0, 0.0))), Box::new(SimpleDiffuseColoredMaterial::new(1.0, 600.0, 40.0)));
+
+    // let sun1 = Entity::LUMINOUS(Box::new(Sphere::new(Vec3::new(0.0, 0.0, 9.0), 1.0)), Box::new(BlackBodyRadiator::new(6800.0, 1.0)));
+    // let sun2 = Entity::LUMINOUS(Box::new(Sphere::new(Vec3::new(4.0, 5.0, -3.0), 1.0)), Box::new(BlackBodyRadiator::new(7000.0, 1.5)));
+    let sun3 = Entity::LUMINOUS(Box::new(Sphere::new(Vec3::new(-4.0, 5.0, -5.0), 2.0)), Box::new(BlackBodyRadiator::new(9000.0, 6.0)));
+
+    // let mirror_sphere1 = Entity::DARK(Box::new(Sphere::new(Vec3::new(3.0, 2.0, 7.0), 1.8)), Box::new(GlossyMaterial::new(0.0, Box::new(DiffuseGrayMaterial::new(1.0)))));
+    // let mirror_sphere2 = Entity::DARK(Box::new(Sphere::new(Vec3::new(0.0, 4.0, 8.0), 2.0)), Box::new(GlossyMaterial::new(0.0, Box::new(DiffuseGrayMaterial::new(1.0)))));
+    // let glass_sphere_1 = Entity::DARK(Box::new(Sphere::new(Vec3::new(0.6, -4.0, 4.5), 0.9)), Box::new(GlassMaterial));
+    // let colored_sphere1 = Entity::DARK(Box::new(Sphere::new(Vec3::new(7.0, 5.0, 5.0), 1.99)), Box::new(SimpleDiffuseColoredMaterial::new(1.0, 580.0, 50.0)));
+    // let glass_coating = Entity::DARK(Box::new(Sphere::new(Vec3::new(7.0, 5.0, 5.0), 2.00)), Box::new(GlassMaterial));
+    // let glass_sphere_3 = Entity::DARK(Box::new(Sphere::new(Vec3::new(-4.0, 6.0, 2.0), 3.00)), Box::new(GlassMaterial));
+
+    // let triangle_mirror = Entity::DARK(Box::new(Triangle::new(Vec3::new(-3.0, 9.9, 9.0), Vec3::new(3.0, 9.9, 9.0), Vec3::new(0.0, 9.9, 6.0))), Box::new(GlossyMaterial::new(0.0, Box::new(DiffuseGrayMaterial::new(1.0)))));
+
+    // let path = "tetrahedron.ply";
+    // let path = "bun_zipper.ply";
+    let path = "lucy.ply";
+    let mut f = std::fs::File::open(path).unwrap();
+    let mut bunny_mesh = mesh::read_ply(f);
+    println!("Loaded mesh");
+    let diameter = (bunny_mesh.aabb().max - bunny_mesh.aabb().min).length();
+    let target_diameter = 12.0;
+    println!("Scale (factor {})", target_diameter / diameter);
+    bunny_mesh = bunny_mesh.scale(target_diameter / diameter);
+    println!("Scaled");
+    bunny_mesh = bunny_mesh.rotate(Quat::from_rotation_x(180.0_f32.to_radians()));
+    println!("Rotated");
+    let center = bunny_mesh.get_center();
+    let t = Vec3::new(-center.x, center.y, 10.0 - bunny_mesh.aabb().max.z);
+    bunny_mesh = bunny_mesh.translate(t);
+    println!("Translated");
+
+    let bunny = Entity::DARK(Box::new(bunny_mesh), Box::new(DiffuseGrayMaterial::new(0.9)));
+    // let bunny = Entity::DARK(Box::new(bunny_mesh), Box::new(GlossyMaterial::new(0.0, Box::new(DiffuseGrayMaterial::new(1.0)))));
+
+    let entities = vec![top, bottom, front, back, left, right, sun3, bunny];
+
+    let camera = Camera::new(
+        Vec3::new(0.0, -8.0, -5.0),
+        Quat::from_vec4(Vec4::new(0.0, 10.0, 1.0, 0.0)).normalize(),
+        std::f32::consts::PI * 0.35,
+        4.0,
+        f32::MAX,
+        0.01
+    );
+    Scene::new(entities, camera)
+}
+
+fn create_scene_box() -> Scene {
+    let top = Entity::DARK(Box::new(Plane::new(Vec3::new(0.0, 0.0, -10.0), Vec3::new(0.0, 0.0, 1.0))), Box::new(GlossyMaterial::new(0.0, Box::new(DiffuseGrayMaterial::new(1.0)))));
+    let bottom = Entity::DARK(Box::new(Plane::new(Vec3::new(0.0, 0.0, 10.0), Vec3::new(0.0, 0.0, 1.0))), Box::new(DiffuseGrayMaterial::new(0.7)));
     let front = Entity::DARK(Box::new(Plane::new(Vec3::new(0.0, -10.0, 0.0), Vec3::new(0.0, 1.0, 0.0))), Box::new(SimpleDiffuseColoredMaterial::new(1.0, 500.0, 10.0)));
     // let front = Entity::LUMINOUS(Box::new(Plane::new(Vec3::new(0.0, -10.0, 0.0), Vec3::new(0.0, 1.0, 0.0))), Box::new(BlackBodyRadiator::new(3000.0, 1.0)));
-    let back = Entity::DARK(Box::new(Plane::new(Vec3::new(0.0, 10.0, 0.0), Vec3::new(0.0, 1.0, 0.0))), Box::new(GlossyMaterial::new(0.8, Box::new(DiffuseGrayMaterial::new(1.0)))));
+    let back = Entity::DARK(Box::new(Plane::new(Vec3::new(0.0, 10.0, 0.0), Vec3::new(0.0, 1.0, 0.0))), Box::new(GlossyMaterial::new(0.8, Box::new(DiffuseGrayMaterial::new(0.7)))));
     let left = Entity::DARK(Box::new(Plane::new(Vec3::new(10.0, 0.0, 0.0), Vec3::new(1.0, 0.0, 0.0))), Box::new(SimpleDiffuseColoredMaterial::new(1.0, 400.0, 20.0)));
     let right = Entity::DARK(Box::new(Plane::new(Vec3::new(-10.0, 0.0, 0.0), Vec3::new(1.0, 0.0, 0.0))), Box::new(SimpleDiffuseColoredMaterial::new(1.0, 600.0, 40.0)));
 
@@ -153,13 +210,21 @@ fn create_scene_box() -> Scene {
     // let triangle_mirror = Entity::DARK(Box::new(Triangle::new(Vec3::new(-3.0, 9.9, 9.0), Vec3::new(3.0, 9.9, 9.0), Vec3::new(0.0, 9.9, 6.0))), Box::new(GlossyMaterial::new(0.0, Box::new(DiffuseGrayMaterial::new(1.0)))));
 
     // let path = "tetrahedron.ply";
-    let path = "bun_zipper.ply";
+    // let path = "bun_zipper.ply";
+    let path = "lucy.ply";
     let mut f = std::fs::File::open(path).unwrap();
     let mut bunny_mesh = mesh::read_ply(f);
-    bunny_mesh = bunny_mesh.scale(20.0);
+    println!("Loaded mesh");
+    let diameter = (bunny_mesh.aabb().max - bunny_mesh.aabb().min).length();
+    let target_diameter = 6.0;
+    println!("Scale (factor {})", target_diameter / diameter);
+    bunny_mesh = bunny_mesh.scale(target_diameter / diameter);
+    println!("Scaled");
     bunny_mesh = bunny_mesh.rotate(Quat::from_rotation_x(270.0_f32.to_radians()) * Quat::from_rotation_y(180.0_f32.to_radians()));
-    let t = Vec3::new(-3.0, 2.0, 10.0 - bunny_mesh.aabb().max.z);
+    println!("Rotated");
+    let t = Vec3::new(-4.0, 1.0, 10.0 - bunny_mesh.aabb().max.z);
     bunny_mesh = bunny_mesh.translate(t);
+    println!("Translated");
 
     let bunny = Entity::DARK(Box::new(bunny_mesh), Box::new(SimpleDiffuseColoredMaterial::new(0.8, 550.0, 30.0)));
     // let bunny = Entity::DARK(Box::new(bunny_mesh), Box::new(GlossyMaterial::new(0.0, Box::new(DiffuseGrayMaterial::new(1.0)))));

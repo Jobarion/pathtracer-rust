@@ -1,14 +1,16 @@
 use std::fs::File;
+
+use bvh::{Point3, Vector3};
 use bvh::aabb::{AABB, Bounded};
 use bvh::bounding_hierarchy::BHShape;
 use bvh::bvh::BVH;
-use bvh::{Point3, Vector3};
+use glam::{Quat, Vec3};
 use ply_rs::{parser, ply};
 use ply_rs::ply::Property;
+
 use crate::geometry::intersection::Intersection;
 use crate::geometry::ray::Ray;
 use crate::geometry::surface::Surface;
-use glam::{Quat, Vec3};
 
 pub struct Mesh {
     bvh: Box<BVH>,
@@ -163,6 +165,7 @@ pub fn read_ply(mut f: File) -> Mesh {
                 ( a, d) if a == "face" => {
                     let vertices = &acc.vertices;
                     acc.faces = d.iter()
+                        // .filter(|x| rand::thread_rng().gen::<f32>() > 0.)
                         .fold(acc.faces, |mut vacc, vval| {
                             if let Property::ListInt(vec) = vval.get("vertex_indices").unwrap() {
                                 assert_eq!(3, vec.len(), "We only support triangular faces");
@@ -236,10 +239,11 @@ impl Surface for Triangle {
 
 #[cfg(test)]
 mod tests {
-    use crate::geometry::ray::Ray;
-    use crate::geometry::mesh::Triangle;
-    use crate::geometry::surface::Surface;
     use glam::{Quat, Vec3, Vec4};
+
+    use crate::geometry::mesh::Triangle;
+    use crate::geometry::ray::Ray;
+    use crate::geometry::surface::Surface;
     use crate::geometry::util;
 
     #[test]
