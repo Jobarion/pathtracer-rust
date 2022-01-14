@@ -1,19 +1,19 @@
 use rand::Rng;
-use crate::geometry::vec3::Vec3;
+use glam::Vec3;
 
-pub fn get_unit() -> f64 {
+pub fn get_unit() -> f32 {
     rand::thread_rng().gen()
 }
 
-pub fn get_bi_unit() -> f64 {
-    rand::thread_rng().gen::<f64>() * 2.0 - 1.0
+pub fn get_bi_unit() -> f32 {
+    rand::thread_rng().gen::<f32>() * 2.0 - 1.0
 }
 
-pub fn get_longitude() -> f64 {
-    rand::thread_rng().gen::<f64>() * std::f64::consts::PI * 2.0
+pub fn get_longitude() -> f32 {
+    rand::thread_rng().gen::<f32>() * std::f32::consts::PI * 2.0
 }
 
-pub fn get_wavelength() -> f64 {
+pub fn get_wavelength() -> f32 {
     get_unit() * 400.0 + 300.0
 }
 

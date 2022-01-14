@@ -6,5 +6,5 @@ pub trait Material: Sync + Send {
 }
 
 pub trait Radiator: Sync + Send {
-    fn get_intensity(&self, wavelength: f64) -> f64;
+    fn get_intensity(&self, wavelength: f32) -> f32;
 }

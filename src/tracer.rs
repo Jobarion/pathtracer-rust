@@ -1,22 +1,21 @@
 use crate::entity::Entity::{DARK, LUMINOUS};
-use crate::geometry::intersection::Intersection;
 use crate::geometry::ray::Ray;
 use crate::scene::Scene;
 use super::ptrandom;
 
 pub struct Photon {
-    pub x: f64,
-    pub y: f64,
-    pub strength: f64,
-    pub wavelength: f64
+    pub x: f32,
+    pub y: f32,
+    pub strength: f32,
+    pub wavelength: f32
 }
 
 pub struct RenderIterator<'a> {
     scene: &'a Scene,
-    min_x: f64,
-    max_x: f64,
-    min_y: f64,
-    max_y: f64
+    min_x: f32,
+    max_x: f32,
+    min_y: f32,
+    max_y: f32
 }
 
 impl RenderIterator<'_> {
@@ -24,7 +23,7 @@ impl RenderIterator<'_> {
         RenderIterator::new_sliced(scene, -1.0, 1.0, -1.0, 1.0)
     }
 
-    pub fn new_sliced(scene: &Scene, min_x: f64, max_x: f64, min_y: f64, max_y: f64) -> RenderIterator {
+    pub fn new_sliced(scene: &Scene, min_x: f32, max_x: f32, min_y: f32, max_y: f32) -> RenderIterator {
         RenderIterator { scene, min_x, max_x, min_y, max_y }
     }
 
@@ -36,11 +35,11 @@ impl RenderIterator<'_> {
         Photon {x, y, strength, wavelength}
     }
 
-    fn render_camera_ray(&self, x: f64, y: f64, wavelength: f64) -> f64 {
+    fn render_camera_ray(&self, x: f32, y: f32, wavelength: f32) -> f32 {
         self.render_ray(self.scene.camera.get_ray(x, y, wavelength))
     }
 
-    fn render_ray(&self, ray: Ray) -> f64 {
+    fn render_ray(&self, ray: Ray) -> f32 {
         let mut continue_chance = 1.0;
         let mut intensity = 1.0;
         let mut current_ray = ray;
@@ -54,7 +53,7 @@ impl RenderIterator<'_> {
                     current_ray = material.get_next_ray(current_ray, i.1);
                     intensity = intensity * current_ray.strength;
                 }
-                current_ray.position = current_ray.position.add(&current_ray.direction.scale(0.0001));
+                current_ray.position = current_ray.position + current_ray.direction * 0.0001;
                 continue_chance *= 0.96;
                 if ptrandom::get_unit() * 0.85 > continue_chance * (1.0 - (intensity * -20.0).exp()) {
                     break;
